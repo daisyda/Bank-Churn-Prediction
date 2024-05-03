@@ -1,0 +1,60 @@
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+
+# Load the data
+data = pd.read_csv('/content/Churn_Modelling.csv')
+
+# Drop unnecessary columns
+data = data.drop(['RowNumber', 'CustomerId', 'Surname'], axis=1)
+
+# Map categorical variables to numerical values
+geography_map = {"France": 1, "Germany": 2, "Spain": 3}
+gender_map = {"Female": 1, "Male": 2}
+data['Geography'] = data['Geography'].map(geography_map)
+data['Gender'] = data['Gender'].map(gender_map)
+
+# Drop rows with missing values
+data = data.dropna()
+
+# Separate features and target
+X = data.drop(['Exited'], axis=1).values
+y = data['Exited'].values
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Standardize features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Initialize a Random Forest classifier
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+# Fit the model to the training data
+rf_model.fit(X_train_scaled, y_train)
+
+# Get feature importances
+feature_importances = rf_model.feature_importances_
+
+# Create a DataFrame to store feature names and importances
+feature_importance_df = pd.DataFrame({
+    'Feature': data.drop(['Exited'], axis=1).columns,
+    'Importance': feature_importances
+})
+
+# Sort features by importance
+feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
+
+# Print the top K features (adjust K as needed)
+top_k_features = feature_importance_df.head(10)
+print("Top 10 features by importance:")
+print(top_k_features)
+
+# Now you can proceed with selecting the relevant features for your neural network model
+# and evaluate its performance.
