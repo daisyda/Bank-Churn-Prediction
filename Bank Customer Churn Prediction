@@ -1,0 +1,48 @@
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+
+# Load the data
+data = pd.read_csv('/content/Churn_Modelling.csv')
+
+# Drop unnecessary columns
+data = data.drop(['RowNumber', 'CustomerId', 'Surname'], axis=1)
+
+# Keep only the top 5 important features
+selected_features = ['Age', 'EstimatedSalary', 'CreditScore', 'Balance', 'NumOfProducts']
+X = data[selected_features].values
+y = data['Exited'].values
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Standardize features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Create a simple neural network
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(units=64, activation='relu', input_shape=(X_train_scaled.shape[1],)),
+    tf.keras.layers.Dense(units=1, activation='sigmoid')
+])
+
+# Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Train the model
+model.fit(X_train_scaled, y_train, epochs=10, batch_size=32, validation_split=0.2, verbose=1)
+
+# Evaluate the model on the test set
+y_pred_test = (model.predict(X_test_scaled) > 0.5).astype(int)
+accuracy = accuracy_score(y_test, y_pred_test)
+precision = precision_score(y_test, y_pred_test)
+recall = recall_score(y_test, y_pred_test)
+
+print("Neural Network Metrics:")
+print("Accuracy:", accuracy)
+print("Precision:", precision)
+print("Recall:", recall)
